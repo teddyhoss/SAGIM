@@ -1,9 +1,12 @@
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, g
 import sqlite3
 import requests
 import os
 import logging
 from dotenv import load_dotenv
+import uuid
+import tempfile
+from pathlib import Path
 
 # Carica le variabili d'ambiente dal file .env
 load_dotenv()
@@ -16,8 +19,16 @@ DEBUG_MODE = os.getenv('DEBUG_MODE', 'False').lower() == 'true'
 logging.basicConfig(level=logging.DEBUG if DEBUG_MODE else logging.INFO)
 logger = logging.getLogger(__name__)
 
-def init_db():
-    conn = sqlite3.connect('export_data.db')
+# Genera un percorso unico per il database ad ogni avvio dell'applicazione
+DB_PATH = os.path.join(tempfile.gettempdir(), f'export_data_{uuid.uuid4()}.db')
+
+def get_db():
+    if 'db' not in g:
+        g.db = sqlite3.connect(DB_PATH)
+        init_db(g.db)
+    return g.db
+
+def init_db(conn):
     c = conn.cursor()
     c.execute('''CREATE TABLE IF NOT EXISTS responses
                  (id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -25,23 +36,36 @@ def init_db():
                   user_response TEXT,
                   llm_analysis TEXT)''')
     conn.commit()
-    conn.close()
 
-init_db()
+@app.teardown_appcontext
+def close_db(error):
+    if hasattr(g, 'db'):
+        g.db.close()
+
+def get_db_uuid():
+    return Path(DB_PATH).stem.split('_')[-1]
 
 # Dizionario per i prompt personalizzati
 custom_prompts = {
-    "Come si chiama la tua azienda?": "Analizza il nome dell'azienda. Ci sono particolarità o significati nascosti? Suggerisci come questo nome potrebbe essere percepito in mercati internazionali.",
-    "Quale la tua Ragione Sociale (P.IVA)?": "Verifica il formato della P.IVA. È coerente con gli standard italiani? Fornisci informazioni sulla struttura aziendale che si può dedurre.",
-    "In che settore operi?": "Analizza il settore indicato. Quali sono le tendenze attuali in questo settore a livello internazionale? Suggerisci potenziali mercati esteri interessanti.",
-    "Da quanti anni è aperta e attiva la azienda?": "Considera l'età dell'azienda. Quali sfide e opportunità potrebbe affrontare nell'espansione internazionale basandosi sulla sua esperienza?",
-    "Su quali piattaforme social media è attualmente presente la vostra azienda?": "Valuta la presenza sui social media. Sono adeguate per i mercati internazionali? Suggerisci strategie per ottimizzare la presenza social per l'espansione all'estero.",
-    "Avete già condotto campagne di marketing sui social media per mercati internazionali? Se sì, quali?": "Analizza l'esperienza in campagne internazionali. Quali lezioni si possono trarre? Suggerisci miglioramenti o nuove strategie basate su best practices internazionali.",
-    "Quali sono le vostre maggiori preoccupazioni riguardo l'esportazione in nuovi mercati?": "Esamina le preoccupazioni espresse. Sono comuni per aziende simili? Fornisci consigli su come affrontare queste sfide e minimizzare i rischi.",
-    "Quale prodotto e/o prodotti vorresti esportare?": "Analizza i prodotti menzionati. Sono adatti per l'esportazione? Suggerisci modifiche o adattamenti per renderli più appetibili in mercati internazionali.",
-    "Vuoi spostare la produzione all'estero?": "Considera i pro e i contro dello spostamento della produzione all'estero basandoti sulla risposta. Fornisci consigli su potenziali location e strategie di implementazione.",
-    "Vuoi trovare nuovi fornitori per il tuo mercato?": "Analizza la risposta riguardo i nuovi fornitori. Suggerisci strategie per la ricerca di fornitori affidabili in mercati internazionali e considera i rischi e le opportunità."
+    "Come si chiama la tua azienda?": "Analizza il nome dell'azienda. Restutisci il nome della azienda, solamente il nome dell azienda nessuna parola extra, se non rilevi un nome azienda restituisci NO in maiuscolo cosi come ho scritto io ",
+    "Quale la tua Ragione Sociale (P.IVA)?": "Verifica il formato della P.IVA. È coerente con gli standard italiani? Se si, Restituisci solamente la PIVA senza nessuna parola extra, se non rilevi una pvia valida restituisci NO in minuscolo cosi come ho scritto io",
+    "In che settore operi?": "Analizza il settore indicato e cerca di capire se è in una di queste categorie: Agroalimentare, Moda,Lusso, Meccanica, Design, Arredamento, Nautico, Farmaceutico, Cosmetico, Tecnologico. Dammi una risposta con solo la parola del settore, solo se corirsponde senno rispondi NO, non voglio altre parole, una sola parola come risposta.",
+    "Da quanti anni è aperta e attiva la azienda?": "Convertimi il numero in un numero intero che si avvicina di piu alla risposta, se non riescei rispondi solo NO, la risposta deve essere solo composta da un numero.",
+    "Su quali piattaforme social media è attualmente presente la vostra azienda?": "Valuta la risposta fornita e dammi una risposta costituita dai nomi dei social network corretti seguiti da una , non devi aggiungere altre parole, se nessun social network e stato fornito rispondi NO",
+    "Avete già condotto campagne di marketing sui social media per mercati internazionali? Se sì, quali?": "Analizza la risposta e forniscimi i concetti chiavi delimitati da una virgola in caso non ci sia nulla rispondimi solo con un NO",
+    "Quali sono le vostre maggiori preoccupazioni riguardo l'esportazione in nuovi mercati?": "Analizza la risposta e forniscimi i concetti chiavi delimitati da una virgola in caso non ci sia nulla rispondimi solo con un NO",
+    "Quale prodotto e/o prodotti vorresti esportare?": "Analizza la sentenza e fornisci una lista di prodotti. Se ci sono più prodotti, separali con una virgola. Se non vi sono prodotti identificabili, scrivi NO. La risposta deve contenere solo i nomi dei prodotti o NO.",
+    "Vuoi spostare la produzione all'estero?": "Valuta la frase e valuta se è positiva, se è positiva rispondimi SI, sennò rispondimi solamente NO",
+    "Vuoi trovare nuovi fornitori per il tuo mercato?": "Valuta la frase e valuta se è positiva, se è positiva rispondimi SI, sennò rispondimi solamente NO"
 }
+
+def preprocess_products(user_response):
+    # Sostituisce congiunzioni comuni con virgole
+    for conjunction in [' e ', ' ed ', ' & ', ' + ']:
+        user_response = user_response.replace(conjunction, ', ')
+    # Rimuove spazi extra e divide per virgola
+    products = [p.strip() for p in user_response.split(',') if p.strip()]
+    return ', '.join(products) if products else user_response
 
 def analyze_with_llm(question, user_response):
     custom_prompt = custom_prompts.get(question, "Analizza la risposta nel contesto dell'esportazione e del commercio internazionale.")
@@ -73,6 +97,9 @@ def submit_single():
     question = data['question']
     user_response = data['response']
 
+    if "Quale prodotto e/o prodotti vorresti esportare?" in question:
+        user_response = preprocess_products(user_response)
+
     llm_analysis = analyze_with_llm(question, user_response)
 
     if DEBUG_MODE:
@@ -89,27 +116,32 @@ def submit_single():
             }
         })
     else:
-        conn = sqlite3.connect('export_data.db')
-        c = conn.cursor()
+        db = get_db()
+        c = db.cursor()
         c.execute("INSERT INTO responses (question, user_response, llm_analysis) VALUES (?, ?, ?)",
                   (question, user_response, llm_analysis))
-        conn.commit()
-        conn.close()
+        db.commit()
         return jsonify({"success": True, "message": "Risposta analizzata e salvata con successo"})
 
 @app.route('/get_data', methods=['GET'])
 def get_data():
-    conn = sqlite3.connect('export_data.db')
-    c = conn.cursor()
+    db = get_db()
+    c = db.cursor()
     
     c.execute("SELECT question, user_response, llm_analysis FROM responses")
     
     data = c.fetchall()
-    conn.close()
     
     formatted_data = [{"question": row[0], "user_response": row[1], "llm_analysis": row[2]} for row in data]
     
     return jsonify(formatted_data)
+
+@app.route('/get_db_uuid', methods=['GET'])
+def get_db_uuid_route():
+    if DEBUG_MODE:
+        return jsonify({"db_uuid": get_db_uuid()})
+    else:
+        return jsonify({"message": "Debug mode is not enabled"}), 403
 
 if __name__ == '__main__':
     app.run(debug=DEBUG_MODE)

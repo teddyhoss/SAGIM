@@ -8,11 +8,14 @@
         body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
         .question { margin-bottom: 20px; }
         .debug-info { background-color: #f0f0f0; padding: 10px; margin-top: 10px; white-space: pre-wrap; }
-        textarea { width: 100%; height: 100px; }
+        #dbUUID { font-weight: bold; color: #007bff; }
     </style>
 </head>
 <body>
     <h1>Questionario Esportazione</h1>
+    <div id="dbInfo" style="display: none;">
+        UUID del Database: <span id="dbUUID"></span>
+    </div>
     <form id="exportForm">
         <div class="question">
             <label for="companyName">Come si chiama la tua azienda?</label>
@@ -88,6 +91,22 @@
     </form>
 
     <script>
+        // Funzione per ottenere l'UUID del database
+        function getDBUUID() {
+            fetch('/get_db_uuid')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.db_uuid) {
+                        document.getElementById('dbUUID').textContent = data.db_uuid;
+                        document.getElementById('dbInfo').style.display = 'block';
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        // Chiamata all'avvio della pagina
+        getDBUUID();
+
         document.getElementById('products').addEventListener('change', function() {
             const products = this.value.split(',').map(p => p.trim());
             let html = '';
