@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Questionario Esportazione</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .question { margin-bottom: 20px; }
+        .debug-info { background-color: #f0f0f0; padding: 10px; margin-top: 10px; white-space: pre-wrap; }
+        textarea { width: 100%; height: 100px; }
+    </style>
+</head>
+<body>
+    <h1>Questionario Esportazione</h1>
+    <form id="exportForm">
+        <div class="question">
+            <label for="companyName">Come si chiama la tua azienda?</label>
+            <input type="text" id="companyName" required>
+            <button type="button" onclick="submitSingle('companyName')">Invia</button>
+            <div id="debug-companyName" class="debug-info"></div>
+        </div>
+        
+        <div class="question">
+            <label for="vatNumber">Quale la tua Ragione Sociale (P.IVA)?</label>
+            <input type="text" id="vatNumber" required>
+            <button type="button" onclick="submitSingle('vatNumber')">Invia</button>
+            <div id="debug-vatNumber" class="debug-info"></div>
+        </div>
+        
+        <div class="question">
+            <label for="sector">In che settore operi?</label>
+            <input type="text" id="sector" required>
+            <button type="button" onclick="submitSingle('sector')">Invia</button>
+            <div id="debug-sector" class="debug-info"></div>
+        </div>
+        
+        <div class="question">
+            <label for="companyAge">Da quanti anni è aperta e attiva la azienda?</label>
+            <input type="number" id="companyAge" required>
+            <button type="button" onclick="submitSingle('companyAge')">Invia</button>
+            <div id="debug-companyAge" class="debug-info"></div>
+        </div>
+        
+        <div class="question">
+            <label for="socialPlatforms">Su quali piattaforme social media è attualmente presente la vostra azienda?</label>
+            <input type="text" id="socialPlatforms" required>
+            <button type="button" onclick="submitSingle('socialPlatforms')">Invia</button>
+            <div id="debug-socialPlatforms" class="debug-info"></div>
+        </div>
+        
+        <div class="question">
+            <label for="internationalMarketing">Avete già condotto campagne di marketing sui social media per mercati internazionali? Se sì, quali?</label>
+            <textarea id="internationalMarketing" required></textarea>
+            <button type="button" onclick="submitSingle('internationalMarketing')">Invia</button>
+            <div id="debug-internationalMarketing" class="debug-info"></div>
+        </div>
+        
+        <div class="question">
+            <label for="exportConcerns">Quali sono le vostre maggiori preoccupazioni riguardo l'esportazione in nuovi mercati?</label>
+            <textarea id="exportConcerns" required></textarea>
+            <button type="button" onclick="submitSingle('exportConcerns')">Invia</button>
+            <div id="debug-exportConcerns" class="debug-info"></div>
+        </div>
+        
+        <div class="question">
+            <label for="products">Quale prodotto e/o prodotti vorresti esportare?</label>
+            <input type="text" id="products" required>
+            <button type="button" onclick="submitSingle('products')">Invia</button>
+            <div id="debug-products" class="debug-info"></div>
+        </div>
+        
+        <div id="productDetails"></div>
+        
+        <div class="question">
+            <label for="moveProduction">Vuoi spostare la produzione all'estero? Perché?</label>
+            <textarea id="moveProduction" required></textarea>
+            <button type="button" onclick="submitSingle('moveProduction')">Invia</button>
+            <div id="debug-moveProduction" class="debug-info"></div>
+        </div>
+        
+        <div class="question">
+            <label for="newSuppliers">Vuoi trovare nuovi fornitori per il tuo mercato? Perché?</label>
+            <textarea id="newSuppliers" required></textarea>
+            <button type="button" onclick="submitSingle('newSuppliers')">Invia</button>
+            <div id="debug-newSuppliers" class="debug-info"></div>
+        </div>
+    </form>
+
+    <script>
+        document.getElementById('products').addEventListener('change', function() {
+            const products = this.value.split(',').map(p => p.trim());
+            let html = '';
+            products.forEach((product, index) => {
+                html += `
+                    <div class="question product">
+                        <h3>${product}</h3>
+                        <label>Quanto è il volume di pezzi che riesci a produrre? (1 x 10^x)</label>
+                        <input type="number" id="productionVolume-${index}" required>
+                        <button type="button" onclick="submitSingle('productionVolume-${index}', '${product}')">Invia</button>
+                        <div id="debug-productionVolume-${index}" class="debug-info"></div>
+
+                        <label>Qual è il prezzo medio di produzione?</label>
+                        <input type="number" id="productionCost-${index}" required>
+                        <button type="button" onclick="submitSingle('productionCost-${index}', '${product}')">Invia</button>
+                        <div id="debug-productionCost-${index}" class="debug-info"></div>
+
+                        <label>Quanti pezzi riesci a vendere attualmente?</label>
+                        <input type="number" id="currentSales-${index}" required>
+                        <button type="button" onclick="submitSingle('currentSales-${index}', '${product}')">Invia</button>
+                        <div id="debug-currentSales-${index}" class="debug-info"></div>
+                    </div>
+                `;
+            });
+            document.getElementById('productDetails').innerHTML = html;
+        });
+
+        function submitSingle(fieldId, productName = '') {
+            const element = document.getElementById(fieldId);
+            const question = element.previousElementSibling.textContent;
+            const response = element.value;
+            const fullQuestion = productName ? `${question} (${productName})` : question;
+
+            fetch('/submit_single', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    question: fullQuestion,
+                    response: response
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.debug_info) {
+                    document.getElementById(`debug-${fieldId}`).textContent = 
+                        JSON.stringify(data.debug_info, null, 2);
+                } else {
+                    alert(data.message);
+                }
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+        }
+    </script>
+</body>
+</html>
