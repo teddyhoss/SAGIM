@@ -9,19 +9,7 @@ from sqlalchemy import text
 REGOLO_TOKEN = os.environ.get('REGOLO_TOKEN')
 REGOLO_EMBEDDING_URL = "https://api.regolo.ai/v1/embeddings"
 REGOLO_CHAT_URL = "https://api.regolo.ai/v1/chat/completions"
-
-class ChatbotViz:
-    viz_type = "chatbot"
-    verbose_name = "Chatbot"
-    is_timeseries = False
-    credits = 'a custom viz plugin'
-    
-    def get_js_files(self):
-        return ['chatbot.js']
-    
-    def get_css_files(self):
-        return []
-    
+  
 class RAGChatbotView(BaseSupersetView):
     route_base = "/rag-chatbot"
 
@@ -90,3 +78,15 @@ class RAGChatbotView(BaseSupersetView):
             return jsonify({"response": response})
         except Exception as e:
             return jsonify({"error": str(e)}), 500
+        
+class ChatbotViz:
+    viz_type = "chatbot"
+    verbose_name = "Chatbot"
+    is_timeseries = False
+    credits = 'a custom viz plugin'
+    
+    def get_js_files(self):
+        return ['chatbot.js']
+    
+    def get_css_files(self):
+        return []
