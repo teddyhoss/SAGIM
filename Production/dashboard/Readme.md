@@ -2,19 +2,19 @@
 
 1. Avvia i container:
    ```
-   docker-compose up -d
+   docker compose up -d
    ```
 
 2. Attendi circa 30 secondi per assicurarti che tutti i servizi siano pronti.
 
 3. Inizializza il database di Superset:
    ```
-   docker-compose exec superset superset db upgrade
+   docker compose exec superset superset db upgrade
    ```
 
 4. Crea un account admin:
    ```
-   docker-compose exec superset superset fab create-admin \
+   docker compose exec superset superset fab create-admin \
        --username admin \
        --firstname Admin \
        --lastname User \
@@ -24,13 +24,13 @@
 
 5. Inizializza Superset:
    ```
-   docker-compose exec superset superset init
+   docker compose exec superset superset init
    ```
 
 6. Crea i permessi e il ruolo pubblico:
    ```
-   docker-compose exec superset superset fab create-permissions
-   docker-compose exec superset superset init
+   docker compose exec superset superset fab create-permissions
+   docker compose exec superset superset init
    ```
 
 ## Accesso a Superset
