@@ -44,12 +44,12 @@ export function Header() {
           <UserOrLogin />
         </React.Suspense>
       </div>
-      <div className="flex items-center justify-end space-x-2">
+      {/*  <div className="flex items-center justify-end space-x-2">
         <Link href="/ai" className={cn(buttonVariants())}>
           <span className="hidden sm:block">Chat IA</span>
           <span className="sm:hidden">Chat IA</span>
         </Link>
-      </div>
+      </div> */}
     </header>
   )
 }
