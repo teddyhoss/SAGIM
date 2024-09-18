@@ -14,7 +14,8 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <main>
-        <section className="flex items-center justify-center container mx-auto h-screen py-40 text-center">
+        <section className="flex flex-col items-center justify-center container mx-auto h-screen py-40 text-center">
+          <img className="pb-7 w-64" src="/logo.png" />
           <AiQuestions />
         </section>
 
