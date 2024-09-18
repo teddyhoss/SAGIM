@@ -17,6 +17,12 @@ PUBLIC_ROLE_LIKE = "Gamma"
 PUBLIC_ROLE_LIKE_GAMMA = True
 FEATURE_FLAGS = {
     "ANONYMOUS_IN_DASHBOARDS": True,
+    "ENABLE_TEMPLATE_PROCESSING": True,
 }
 ANONYMOUS_REDIRECT_URL = "/superset/welcome/"
 SESSION_COOKIE_SAMESITE = None
+
+# Configurazione per il plugin RAG Chatbot
+CUSTOM_TEMPLATE_PROCESSORS = {
+    'rag_chatbot': 'superset_rag_plugin.superset_rag_chatbot.plugin.ChatbotViz',
+}
