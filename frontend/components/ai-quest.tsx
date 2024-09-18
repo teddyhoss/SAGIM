@@ -61,7 +61,7 @@ const TypewriterEffect: React.FC<TypewriterEffectProps> = ({
         const timer = setTimeout(() => {
           setDisplayedText(text.slice(0, displayedText.length - 1))
           setIndex(index - 1)
-        }, 30)
+        }, 23)
         return () => clearTimeout(timer)
       } else {
         onComplete()
@@ -71,7 +71,7 @@ const TypewriterEffect: React.FC<TypewriterEffectProps> = ({
         const timer = setTimeout(() => {
           setDisplayedText(text.slice(0, index + 1))
           setIndex(index + 1)
-        }, 30)
+        }, 23)
         return () => clearTimeout(timer)
       } else {
         onComplete()
