@@ -2,6 +2,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Globe, ShieldCheck, TrendingUp, Play } from 'lucide-react'
 import Link from 'next/link'
+import AiQuestions from '@/components/ai-quest'
 
 interface FeatureCardProps {
   icon: React.ReactNode
@@ -13,19 +14,8 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <main>
-        <section className="container mx-auto h-screen py-40 text-center">
-          <h1 className="text-5xl font-bold mb-6">
-            Soluzioni AI per l'Esportazione delle PMI
-          </h1>
-          <p className="text-xl mb-8 max-w-2xl mx-auto text-muted-foreground">
-            SAGIM utilizza l'intelligenza artificiale all'avanguardia per
-            aiutare le piccole e medie imprese a espandersi a livello globale,
-            semplificare le esportazioni e garantire i loro contratti
-            internazionali.
-          </p>
-          <Link href="/questionario">
-            <Button size="lg">Inizia</Button>
-          </Link>
+        <section className="flex items-center justify-center container mx-auto h-screen py-40 text-center">
+          <AiQuestions />
         </section>
 
         <section id="features" className="bg-secondary py-20">
