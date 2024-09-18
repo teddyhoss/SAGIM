@@ -171,9 +171,9 @@ export default function Component() {
                       <h2 className="text-xl font-bold mb-2 text-center">
                         Questionario completato!
                       </h2>
-                      <Link href="/ai" className={cn(buttonVariants())}>
+                      <Link href="/something" className={cn(buttonVariants())}>
                         <span className="hidden sm:block">
-                          Chatta col tuo AI personalizzato
+                          Esplora la dashboard
                         </span>
                         <span className="sm:hidden">Deploy</span>
                       </Link>
