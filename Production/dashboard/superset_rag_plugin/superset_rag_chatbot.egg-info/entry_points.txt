@@ -1,2 +1,0 @@
-[superset.viz_type]
-chatbot = superset_rag_chatbot.plugin:ChatbotViz

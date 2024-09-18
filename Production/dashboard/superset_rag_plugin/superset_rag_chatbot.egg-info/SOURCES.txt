@@ -1,8 +1,0 @@
-setup.py
-superset_rag_chatbot.egg-info/PKG-INFO
-superset_rag_chatbot.egg-info/SOURCES.txt
-superset_rag_chatbot.egg-info/dependency_links.txt
-superset_rag_chatbot.egg-info/entry_points.txt
-superset_rag_chatbot.egg-info/not-zip-safe
-superset_rag_chatbot.egg-info/requires.txt
-superset_rag_chatbot.egg-info/top_level.txt

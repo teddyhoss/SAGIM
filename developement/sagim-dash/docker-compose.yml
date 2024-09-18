@@ -1,0 +1,71 @@
+version: "3"
+
+services:
+  # General use PostgreSQL service
+  db_general:
+    image: postgres:latest
+    container_name: pgsql_general
+    environment:
+      - POSTGRES_USER=data24
+      - POSTGRES_PASSWORD=data24
+      - POSTGRES_DB=data24
+    ports:
+      - "9999:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  # PostgreSQL service specifically for Apache Superset
+  db_superset:
+    image: postgres:12
+    container_name: superset_db
+    environment:
+      - POSTGRES_DB=superset
+      - POSTGRES_USER=superset
+      - POSTGRES_PASSWORD=superset
+    volumes:
+      - ./db_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"  # Changed to avoid port conflict with the general use db
+
+  # Redis service for Apache Superset
+  redis:
+    image: redis:latest
+    container_name: superset_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./redis_data:/data
+
+  # Apache Superset service
+  superset:
+    image: apache/superset:latest
+    container_name: superset
+    environment:
+      - SUPERSET_SECRET_KEY=your_secret_key_here
+      - POSTGRES_DB=superset
+      - POSTGRES_USER=superset
+      - POSTGRES_PASSWORD=superset
+      - POSTGRES_HOST=db_superset
+      - POSTGRES_PORT=5432
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    volumes:
+      - ./superset_home:/app/superset_home
+      - ./superset_config.py:/app/pythonpath/superset_config.py  # Mount the custom config file
+    ports:
+      - "8088:8088"
+    depends_on:
+      - db_superset
+      - redis
+    entrypoint: >
+      /bin/sh -c "
+      superset db upgrade &&
+      superset init &&
+      (superset fab create-admin --username admin --firstname Admin --lastname User --email admin@superset.com --password admin || echo 'Admin user already exists') &&
+      superset run -p 8088 -h 0.0.0.0 --with-threads --reload --debugger
+      "
+
+volumes:
+  pgdata:
+  db_data:
+  redis_data:
