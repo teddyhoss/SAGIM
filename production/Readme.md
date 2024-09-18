@@ -1,0 +1,1 @@
+Ricorda di estrpolare il contenuto dello Zip nella cartella del deploy prima di fare il deploy.
