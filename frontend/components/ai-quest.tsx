@@ -154,7 +154,8 @@ export default function Component() {
         >
           {/* Call-to-Action Button */}
           <a
-            href="http://localhost:8088"
+            href="
+http://localhost:8088/superset/dashboard/1/?native_filters_key=oG5qD9eSUsOarU6H582fpOtqcWYjE9_Ls3FYkMDZtKWCupfom0Zn9Sq3J14JN_xO"
             //se vuoi che si apra in una nuova finestra
             //target="_blank"
             rel="noopener noreferrer"
