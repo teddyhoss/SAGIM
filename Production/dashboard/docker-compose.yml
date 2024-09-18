@@ -1,0 +1,28 @@
+version: '3'
+services:
+  postgres:
+    image: postgres:13
+    environment:
+      POSTGRES_DB: superset
+      POSTGRES_PASSWORD: supersecretpassword
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:6
+
+  superset:
+    image: apache/superset
+    depends_on:
+      - postgres
+      - redis
+    environment:
+      SUPERSET_SECRET_KEY: your_very_secure_secret_key_here
+      SUPERSET_LOAD_EXAMPLES: "yes"
+    volumes:
+      - ./superset_config.py:/app/pythonpath/superset_config.py
+    ports:
+      - "8088:8088"
+
+volumes:
+  postgres_data:
