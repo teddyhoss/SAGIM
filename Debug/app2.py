@@ -5,6 +5,8 @@ import os
 import logging
 from dotenv import load_dotenv
 import uuid
+import tempfile
+from pathlib import Path
 
 # Carica le variabili d'ambiente dal file .env
 load_dotenv()
@@ -14,54 +16,40 @@ app = Flask(__name__)
 REGOLO_TOKEN = os.getenv('REGOLO_TOKEN')
 DEBUG_MODE = os.getenv('DEBUG_MODE', 'False').lower() == 'true'
 
-# Configurazione del logging
-logging.basicConfig(level=logging.DEBUG if DEBUG_MODE else logging.INFO,
-                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.DEBUG if DEBUG_MODE else logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Genera un percorso per il database nella directory del progetto
-DB_PATH = os.path.join(os.path.dirname(__file__), f'export_data_{uuid.uuid4().hex[:8]}.db')
-logger.info(f"Percorso del database: {DB_PATH}")
+# Genera un percorso unico per il database ad ogni avvio dell'applicazione
+DB_PATH = os.path.join(tempfile.gettempdir(), f'export_data_{uuid.uuid4()}.db')
 
 def get_db():
     if 'db' not in g:
-        try:
-            g.db = sqlite3.connect(DB_PATH)
-            logger.info(f"Connessione al database stabilita: {DB_PATH}")
-            init_db(g.db)
-        except sqlite3.Error as e:
-            logger.error(f"Errore nella connessione al database: {e}")
-            raise
+        g.db = sqlite3.connect(DB_PATH)
+        init_db(g.db)
     return g.db
 
 def init_db(conn):
-    try:
-        c = conn.cursor()
-        c.execute('''CREATE TABLE IF NOT EXISTS responses
-                     (id INTEGER PRIMARY KEY AUTOINCREMENT,
-                      question TEXT,
-                      user_response TEXT,
-                      llm_analysis TEXT)''')
-        conn.commit()
-        logger.info("Tabella 'responses' creata o già esistente")
-    except sqlite3.Error as e:
-        logger.error(f"Errore nell'inizializzazione del database: {e}")
-        raise
+    c = conn.cursor()
+    c.execute('''CREATE TABLE IF NOT EXISTS responses
+                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                  question TEXT,
+                  user_response TEXT,
+                  llm_analysis TEXT)''')
+    conn.commit()
 
 @app.teardown_appcontext
 def close_db(error):
     if hasattr(g, 'db'):
         g.db.close()
-        logger.info("Connessione al database chiusa")
 
 def get_db_uuid():
-    return os.path.basename(DB_PATH).split('_')[-1].split('.')[0]
+    return Path(DB_PATH).stem.split('_')[-1]
 
 # Dizionario per i prompt personalizzati
 custom_prompts = {
     "Come si chiama la tua azienda?": "Analizza il nome dell'azienda. Restutisci il nome della azienda, solamente il nome dell azienda nessuna parola extra, se non rilevi un nome azienda restituisci NO in maiuscolo cosi come ho scritto io ",
     "Quale la tua Ragione Sociale (P.IVA)?": "Verifica il formato della P.IVA. È coerente con gli standard italiani? Se si, Restituisci solamente la PIVA senza nessuna parola extra, se non rilevi una pvia valida restituisci NO in minuscolo cosi come ho scritto io",
-    "In che settore operi?": "Analizza il settore indicato e cerca di capire se è in una di queste categorie: Agroalimentare, Moda,Lusso, Meccanica, Design, Arredamento, Nautico, Farmaceutico, Cosmetico, Tecnologico. Dammi una risposta con solo la parola del settore, solo se corrrisponde, altrimenti rispondi NO, non voglio altre parole, una sola parola come risposta.",
+    "In che settore operi?": "Analizza il settore indicato e cerca di capire se è in una di queste categorie: Agroalimentare, Moda,Lusso, Meccanica, Design, Arredamento, Nautico, Farmaceutico, Cosmetico, Tecnologico. Dammi una risposta con solo la parola del settore, solo se corirsponde senno rispondi NO, non voglio altre parole, una sola parola come risposta.",
     "Da quanti anni è aperta e attiva la azienda?": "Convertimi il numero in un numero intero che si avvicina di piu alla risposta, se non riescei rispondi solo NO, la risposta deve essere solo composta da un numero.",
     "Su quali piattaforme social media è attualmente presente la vostra azienda?": "Valuta la risposta fornita e dammi una risposta costituita dai nomi dei social network corretti seguiti da una , non devi aggiungere altre parole, se nessun social network e stato fornito rispondi NO",
     "Avete già condotto campagne di marketing sui social media per mercati internazionali? Se sì, quali?": "Analizza la risposta e forniscimi i concetti chiavi delimitati da una virgola in caso non ci sia nulla rispondimi solo con un NO",
@@ -101,12 +89,10 @@ def analyze_with_llm(question, user_response):
 
 @app.route('/')
 def index():
-    logger.info("Richiesta alla route principale ricevuta")
     return render_template('index.html')
 
 @app.route('/submit_single', methods=['POST'])
 def submit_single():
-    logger.info("Richiesta di sottomissione singola ricevuta")
     data = request.json
     question = data['question']
     user_response = data['response']
@@ -130,31 +116,25 @@ def submit_single():
             }
         })
     else:
-        try:
-            db = get_db()
-            c = db.cursor()
-            c.execute("INSERT INTO responses (question, user_response, llm_analysis) VALUES (?, ?, ?)",
-                      (question, user_response, llm_analysis))
-            db.commit()
-            logger.info("Dati inseriti nel database con successo")
-            return jsonify({"success": True, "message": "Risposta analizzata e salvata con successo"})
-        except sqlite3.Error as e:
-            logger.error(f"Errore nell'inserimento dei dati nel database: {e}")
-            return jsonify({"success": False, "message": "Errore nel salvataggio dei dati"}), 500
+        db = get_db()
+        c = db.cursor()
+        c.execute("INSERT INTO responses (question, user_response, llm_analysis) VALUES (?, ?, ?)",
+                  (question, user_response, llm_analysis))
+        db.commit()
+        return jsonify({"success": True, "message": "Risposta analizzata e salvata con successo"})
 
 @app.route('/get_data', methods=['GET'])
 def get_data():
-    logger.info("Richiesta di recupero dati ricevuta")
-    try:
-        db = get_db()
-        c = db.cursor()
-        c.execute("SELECT question, user_response, llm_analysis FROM responses")
-        data = c.fetchall()
-        formatted_data = [{"question": row[0], "user_response": row[1], "llm_analysis": row[2]} for row in data]
-        return jsonify(formatted_data)
-    except sqlite3.Error as e:
-        logger.error(f"Errore nel recupero dei dati dal database: {e}")
-        return jsonify({"error": "Errore nel recupero dei dati"}), 500
+    db = get_db()
+    c = db.cursor()
+    
+    c.execute("SELECT question, user_response, llm_analysis FROM responses")
+    
+    data = c.fetchall()
+    
+    formatted_data = [{"question": row[0], "user_response": row[1], "llm_analysis": row[2]} for row in data]
+    
+    return jsonify(formatted_data)
 
 @app.route('/get_db_uuid', methods=['GET'])
 def get_db_uuid_route():
@@ -164,5 +144,4 @@ def get_db_uuid_route():
         return jsonify({"message": "Debug mode is not enabled"}), 403
 
 if __name__ == '__main__':
-    logger.info("Avvio dell'applicazione Flask")
     app.run(debug=DEBUG_MODE)
