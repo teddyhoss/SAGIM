@@ -1,7 +1,7 @@
 import os
 
 # Database configurations
-SQLALCHEMY_DATABASE_URI = f"postgresql://postgres:{os.environ.get('POSTGRES_PASSWORD')}@postgres:5432/{os.environ.get('POSTGRES_DB')}"
+SQLALCHEMY_DATABASE_URI = 'postgresql://postgres:supersecretpassword@postgres:5432/superset'
 REDIS_HOST = 'redis'
 REDIS_PORT = 6379
 

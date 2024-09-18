@@ -1,0 +1,65 @@
+services:
+  redis:
+    image: redis:latest
+    restart: unless-stopped
+    volumes:
+      - redis:/data
+
+  db:
+    image: postgres:14
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_USER=${POSTGRES_USER}
+    volumes:
+      - db_home:/var/lib/postgresql/data
+
+  superset:
+    image: apache/superset
+    restart: unless-stopped
+    depends_on:
+      - db
+      - redis
+    environment:
+      - SUPERSET_SECRET_KEY=${SUPERSET_SECRET_KEY}
+      - SQLALCHEMY_DATABASE_URI=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db/${POSTGRES_DB}
+      - REDIS_HOST=redis
+    volumes:
+      - ./superset_config.py:/app/pythonpath/superset_config.py
+      - superset_home:/app/superset_home
+    ports:
+      - "${SUPERSET_PORT}:8088"
+    user: "root"
+    command: >
+      bash -c "superset db upgrade &&
+               superset init &&
+               gunicorn -w 10 -k gevent --timeout 120 -b  0.0.0.0:8088 --limit-request-line 0 --limit-request-field_size 0 'superset.app:create_app()'"
+
+  sagim_chat_backend:
+    build: ./sagim_chat
+    environment:
+      - REGOLO_API_KEY=${REGOLO_API_KEY}
+      - FLASK_APP=app.py
+      - FLASK_RUN_HOST=0.0.0.0
+    volumes:
+      - ./sagim_chat/app.py:/app/app.py
+      - ./sagim_chat/context.txt:/app/context.txt
+    ports:
+      - "${SAGIM_CHAT_BACKEND_PORT}:5000"
+
+  sagim_chat_frontend:
+    image: nginx:alpine
+    volumes:
+      - ./sagim_chat/index.html:/usr/share/nginx/html/index.html
+    ports:
+      - "${SAGIM_CHAT_FRONTEND_PORT}:80"
+
+volumes:
+  superset_home:
+  db_home:
+  redis:
+
+networks:
+  default:
+    name: superset_sagim_network

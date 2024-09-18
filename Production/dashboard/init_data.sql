@@ -107,7 +107,7 @@ CREATE TABLE IF NOT EXISTS cultural_analysis (
     id SERIAL PRIMARY KEY,
     country VARCHAR(50),
     cultural_dimension VARCHAR(50),
-    score DECIMAL(3,2),
+    score DECIMAL(5,2),
     business_impact VARCHAR(255)
 );
 
