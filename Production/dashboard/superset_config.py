@@ -1,6 +1,7 @@
 import os
 
-SQLALCHEMY_DATABASE_URI = 'postgresql://postgres:supersecretpassword@postgres:5432/superset'
+# Database configurations
+SQLALCHEMY_DATABASE_URI = f"postgresql://postgres:{os.environ.get('POSTGRES_PASSWORD')}@postgres:5432/{os.environ.get('POSTGRES_DB')}"
 REDIS_HOST = 'redis'
 REDIS_PORT = 6379
 
@@ -15,14 +16,20 @@ AUTH_USER_REGISTRATION = True
 AUTH_USER_REGISTRATION_ROLE = "Public"
 PUBLIC_ROLE_LIKE = "Gamma"
 PUBLIC_ROLE_LIKE_GAMMA = True
+
 FEATURE_FLAGS = {
     "ANONYMOUS_IN_DASHBOARDS": True,
-    "ENABLE_TEMPLATE_PROCESSING": True,
 }
+
 ANONYMOUS_REDIRECT_URL = "/superset/welcome/"
 SESSION_COOKIE_SAMESITE = None
 
 # Configurazione per il plugin RAG Chatbot
-CUSTOM_TEMPLATE_PROCESSORS = {
-    'rag_chatbot': 'superset_rag_plugin.superset_rag_chatbot.plugin.ChatbotViz',
-}
+ENABLE_RAG_CHATBOT = os.environ.get('ENABLE_RAG_CHATBOT', 'false').lower() == 'true'
+RAG_CHATBOT_MODEL = os.environ.get('RAG_CHATBOT_MODEL', 'llama3.1:70b-instruct-q8_0')
+
+if ENABLE_RAG_CHATBOT:
+    FEATURE_FLAGS["ENABLE_TEMPLATE_PROCESSING"] = True
+    CUSTOM_TEMPLATE_PROCESSORS = {
+        'rag_chatbot': 'superset_rag_plugin.superset_rag_chatbot.plugin.ChatbotViz',
+    }
