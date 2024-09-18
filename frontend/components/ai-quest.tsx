@@ -163,7 +163,7 @@ http://localhost:8088/superset/dashboard/1/?native_filters_key=oG5qD9eSUsOarU6H5
             <Button
               className={`${isLoading ? 'cursor-default' : 'cursor-pointer'}`}
             >
-              Esplora la dashboard
+              Accedi alla tua dashboard personalizzata
             </Button>
           </a>
         </div>
