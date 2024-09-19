@@ -22,6 +22,8 @@ SAGIM (Sistema Avanzato di Gestione Intelligente dei Mercati) è un'intelligenza
 
 SAGIM utilizza un'architettura RAG (Retrieval-Augmented Generation) ad alte prestazioni, ottimizzata per l'analisi e la gestione di mercati globali, implementata principalmente in Rust con componenti critiche in Python.
 
+![Architettura SAGIM](https://github.com/teddyhoss/SAGIM/raw/main/architecture/definitivo.png)
+
 ### Componenti Principali
 
 1. **Modello di Linguaggio (LLM)**:
