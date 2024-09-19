@@ -10,12 +10,9 @@ SAGIM (Sistema Avanzato di Gestione Intelligente dei Mercati) è un'intelligenza
 
 - 🔮 Analisi predittiva di mercato
 - 📊 Analisi dei social media e sentiment analysis
-- 🌐 Ottimizzazione della catena di approvvigionamento globale
-- 🎨 Personalizzazione del prodotto basata su preferenze locali (forse)
-- 🕵️ Analisi competitiva avanzata (forse) 
+- 🕵️ Analisi competitiva avanzata
 - 💹 Pricing dinamico e ottimizzazione 
 - 🛡️ Gestione del rischio geopolitico ed economico
 - 🌍 Analisi dei dati culturali e adattamento del business
-- 🎯 Sistemi di raccomandazione personalizzati (si)
-- 📸 Riconoscimento delle immagini per analisi di packaging (in arrivo)
+- 🎯 Sistemi di raccomandazione personalizzati
 - 🧩 Simulazioni di scenario per strategie di ingresso nel mercato
